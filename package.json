@@ -17,6 +17,6 @@
     "express-cors": "*",
     "jsonwebtoken": "*",
     "pg": "*",
-    "supertest": "*"
+    "supertest": "^6.3.3"
   }
 }

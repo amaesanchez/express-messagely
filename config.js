@@ -6,9 +6,15 @@
 
 require("dotenv").config();
 
-const DB_URI = (process.env.NODE_ENV === "test")
-    ? "postgresql:///messagely_test"
-    : "postgresql:///messagely";
+// DB_URI definition for arlaine
+// const DB_URI = (process.env.NODE_ENV === "test")
+//     ? "postgresql:///messagely_test"
+//     : "postgresql:///messagely";
+
+// DB_URI definition for nico
+const DB_URI = process.env.NODE_ENV === "test"
+  ? "postgresql://nicom:nicom@localhost/messagely_test"
+  : "postgresql://nicom:nicom@localhost/messagely"
 
 const SECRET_KEY = process.env.SECRET_KEY || "secret";
 
