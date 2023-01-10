@@ -7,7 +7,7 @@
 require("dotenv").config();
 
 // DB_URI definition for arlaine
-const DB_URI = (process.env.NODE_ENV === "test")
+const DB_URI = process.env.NODE_ENV === "test"
     ? "postgresql:///messagely_test"
     : "postgresql:///messagely";
 
