@@ -14,10 +14,22 @@ class User {
   static async register({ username, password, first_name, last_name, phone }) {
     const hashedPw = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 
+    // separate columns
     const results = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
+      `INSERT INTO users (
+          username,
+          password,
+          first_name,
+          last_name,
+          phone,
+          join_at,
+          last_login_at)
         VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
-        RETURNING username, password, first_name, last_name, phone
+        RETURNING username,
+            password,
+            first_name,
+            last_name,
+            phone
       `,
       [username, hashedPw, first_name, last_name, phone]
     );
@@ -34,20 +46,20 @@ class User {
       WHERE username = $1`,
       [username]
     );
-    
-    const testPw = results.rows[0].password;
+
+    const user = results.rows[0];
 
     // pass in (IN ORDER) raw text password, THEN hashed password
-    return (await bcrypt.compare(password, testPw)) === true;
+    return user && await bcrypt.compare(password, user.password) === true;
   }
 
   /** Update last_login_at for user */
-
   static async updateLoginTimestamp(username) {
     await db.query(
       `UPDATE users
         SET last_login_at = current_timestamp
-        WHERE username = $1`,
+        WHERE username = $1
+        RETURNING username`,
       [username]
     );
   }
@@ -57,8 +69,11 @@ class User {
 
   static async all() {
     const results = await db.query(
-      `SELECT username, first_name, last_name
+      `SELECT username,
+          first_name,
+          last_name
         FROM users
+        ORDER BY username
       `
     );
 
@@ -76,7 +91,12 @@ class User {
 
   static async get(username) {
     const results = await db.query(
-      `SELECT username, first_name, last_name, phone, join_at, last_login_at
+      `SELECT username,
+          first_name,
+          last_name,
+          phone,
+          join_at,
+          last_login_at
         FROM users
         WHERE username = $1
       `,
@@ -98,28 +118,39 @@ class User {
 
   static async messagesFrom(username) {
     const messageResults = await db.query(
-      `SELECT id, to_username AS to_user, body, sent_at, read_at
-        FROM messages
+      `SELECT m.id,
+          m.to_username,
+          u.first_name,
+          u.last_name,
+          u.phone,
+          m.body,
+          m.sent_at,
+          m.read_at
+        FROM messages AS m
+          JOIN users AS u
+            ON u.username = m.to_username
         WHERE from_username = $1
       `,
       [username]
     );
-    const messages = messageResults.rows;
 
     if (!messageResults.rows[0]) throw new NotFoundError(
-      `No messages found from ${username}.`)
+      `No messages found to ${username}.`)
 
-    for (let msg of messages) {
-      let userResults = await db.query(
-        `SELECT username, first_name, last_name, phone
-          FROM users
-          WHERE username = $1
-        `,
-        [msg.to_user]
-      );
-
-      msg.to_user = userResults.rows[0];
-    }
+    const messages = messageResults.rows.map(m => {
+      return {
+        id : m.id,
+        to_user : {
+          username : m.to_username,
+          first_name : m.first_name,
+          last_name : m.last_name,
+          phone : m.phone
+        },
+        body : m.body,
+        sent_at : m.sent_at,
+        read_at : m.read_at
+      }
+    });
 
     return messages;
   }
@@ -134,28 +165,39 @@ class User {
 
   static async messagesTo(username) {
     const messageResults = await db.query(
-      `SELECT id, from_username AS from_user, body, sent_at, read_at
-        FROM messages
+      `SELECT m.id,
+          m.from_username,
+          u.first_name,
+          u.last_name,
+          u.phone,
+          m.body,
+          m.sent_at,
+          m.read_at
+        FROM messages AS m
+          JOIN users AS u
+            ON u.username = m.from_username
         WHERE to_username = $1
       `,
       [username]
     );
-    const messages = messageResults.rows;
 
     if (!messageResults.rows[0]) throw new NotFoundError(
       `No messages found to ${username}.`)
 
-    for (let msg of messages) {
-      let userResults = await db.query(
-        `SELECT username, first_name, last_name, phone
-          FROM users
-          WHERE username = $1
-        `,
-        [msg.from_user]
-      );
-
-      msg.from_user = userResults.rows[0];
-    }
+    const messages = messageResults.rows.map(m => {
+      return {
+        id : m.id,
+        from_user : {
+          username : m.from_username,
+          first_name : m.first_name,
+          last_name : m.last_name,
+          phone : m.phone
+        },
+        body : m.body,
+        sent_at : m.sent_at,
+        read_at : m.read_at
+      }
+    });
 
     return messages;
   }
