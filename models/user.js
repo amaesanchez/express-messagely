@@ -26,6 +26,7 @@ class User {
           last_login_at)
         VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
         RETURNING username,
+            password,
             first_name,
             last_name,
             phone
@@ -38,7 +39,7 @@ class User {
 
   /** Authenticate: is username/password valid? Returns boolean. */
 
-  static async authenticate({ username, password }) {
+  static async authenticate( username, password ) {
     const results = await db.query(
       `SELECT password
       FROM users
