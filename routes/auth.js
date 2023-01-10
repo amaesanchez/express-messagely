@@ -8,14 +8,14 @@ const User = require("../models/user");
 const { SECRET_KEY } = require("../config");
 const { UnauthorizedError, BadRequestError } = require("../expressError")
 
-
+//update login timestamp
 /** POST /login: {username, password} => {token} */
 router.post("/login", async function (req, res, next) {
-  if (!req.body || !req.body?.username || !req.body?.password) {
-    throw new BadRequestError("missing information - username/password required.")
+  if (!req.body) {
+    throw new BadRequestError("missing information.")
   }
-  
-  if (await User.authenticate(req.body)) {
+  // add === true
+  if (await User.authenticate(req.body.username, req.body.password)) {
     const token = jwt.sign({ username: req.body.username }, SECRET_KEY);
     return res.json({ token });
   }
@@ -23,13 +23,17 @@ router.post("/login", async function (req, res, next) {
   throw new UnauthorizedError("invalid credentials.");
 })
 
-
+// add error handling for !req.body
+//destructure username
 /** POST /register: registers, logs in, and returns token.
  *
  * {username, password, first_name, last_name, phone} => {token}.
  */
 router.post("/register", async function (req, res, next) {
-  // const { username, password, first_name, last_name, phone } = req.body;
+  if (!req.body) {
+    throw new BadRequestError("missing information.")
+  }
+
   const user = await User.register(req.body);
   const token = jwt.sign({ username: user.username }, SECRET_KEY);
 

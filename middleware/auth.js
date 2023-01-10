@@ -51,9 +51,30 @@ function ensureCorrectUser(req, res, next) {
   }
 }
 
+/** Middleware: Requires user to be equal to
+ * from_username/to_username of a message */
+function ensureSenderOrRecipient(req, res) {
+  if (res.locals.user.username === res.locals.message.from_user.username ||
+    res.locals.user.username === res.locals.message.to_user.username) {
+    return;
+  } else {
+    throw new UnauthorizedError();
+  }
+}
+
+/** Middleware: Requires user to be the recipient of the message */
+function ensureRecipient(req, res) {
+  if (res.locals.user.username === res.locals.message.to_user.username) {
+    return;
+  } else {
+    throw new UnauthorizedError();
+  }
+}
 
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
   ensureCorrectUser,
+  ensureSenderOrRecipient,
+  ensureRecipient
 };
