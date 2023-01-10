@@ -3,6 +3,7 @@
 const db = require("../db");
 const bcrypt = require("bcrypt");
 const { BCRYPT_WORK_FACTOR } = require("../config");
+const { NotFoundError } = require("../expressError");
 
 /** User of the site. */
 
@@ -33,7 +34,7 @@ class User {
       WHERE username = $1`,
       [username]
     );
-
+    
     const testPw = results.rows[0].password;
 
     // pass in (IN ORDER) raw text password, THEN hashed password
@@ -82,6 +83,8 @@ class User {
       [username]
     );
 
+    if (!results.rows[0]) throw new NotFoundError(`${username} not found.`)
+
     return results.rows[0];
   }
 
@@ -102,6 +105,9 @@ class User {
       [username]
     );
     const messages = messageResults.rows;
+
+    if (!messageResults.rows[0]) throw new NotFoundError(
+      `No messages found from ${username}.`)
 
     for (let msg of messages) {
       let userResults = await db.query(
@@ -135,6 +141,9 @@ class User {
       [username]
     );
     const messages = messageResults.rows;
+
+    if (!messageResults.rows[0]) throw new NotFoundError(
+      `No messages found to ${username}.`)
 
     for (let msg of messages) {
       let userResults = await db.query(
